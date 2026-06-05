@@ -1,17 +1,24 @@
-name: Deploy Thinking Healer to cPanel
+name: Deploy Thinking Healer Production
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Show repo files
+        run: |
+          pwd
+          ls -la
+          ls -la wp-content/themes/newsexo | head
 
       - name: Setup SSH key
         run: |
@@ -19,10 +26,24 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Test SSH connection
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
+          echo "Checking key file..."
+          ls -la ~/.ssh/deploy_key
+          head -n 1 ~/.ssh/deploy_key
+          tail -n 1 ~/.ssh/deploy_key
 
-      - name: Deploy NewsExo theme
+      - name: Test SSH connection with debug
         run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key -r wp-content/themes/newsexo/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo/
+          ssh -vvv \
+            -o StrictHostKeyChecking=no \
+            -o PreferredAuthentications=publickey \
+            -o PasswordAuthentication=no \
+            -i ~/.ssh/deploy_key \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "whoami && pwd && ls -la /home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo"
+
+      - name: Deploy theme files
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" \
+            wp-content/themes/newsexo/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo/
