@@ -11,15 +11,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Deploy NewsExo theme via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "wp-content/themes/newsexo/*"
-          target: "/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo"
-          strip_components: 3
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy NewsExo theme
+        run: |
+          scp -i ~/.ssh/deploy_key -r wp-content/themes/newsexo/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo/
