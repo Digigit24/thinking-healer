@@ -11,15 +11,24 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
+
+      - name: Add remote host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Set up SSH key using ssh-agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy NewsExo theme via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 88.222.214.190
-          username: jupiteermri
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
           source: "wp-content/themes/newsexo/*"
           target: "/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo"
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           strip_components: 3
