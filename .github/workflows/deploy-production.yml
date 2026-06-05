@@ -19,6 +19,10 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "whoami && pwd"
+
       - name: Deploy NewsExo theme
         run: |
           scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key -r wp-content/themes/newsexo/* ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/jupiteermri/public_html/thinkinghealer.com/wp-content/themes/newsexo/
